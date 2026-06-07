@@ -877,7 +877,7 @@ if instance_exists(target) == false {
     target = noone;
 }
 
-// --- szukanie celu ---
+// --- find a target ---
 if target == noone and not is_stunned {
     var _list = ds_list_create();
     var _n = collision_circle_list(x, y, aggro_range, obj_player, false, true, _list, false);
@@ -897,14 +897,14 @@ if target == noone and not is_stunned {
     ds_list_destroy(_list);
 }
 
-// --- zachowanie wg stanu ---
+// --- behaviour per state ---
 switch state {
     case ENEMY.IDLE:
         if target != noone hsp = 0;
         vsp = 0;
     break;
 
-    case ENEMY.CHASE: // gonienie gracza
+    case ENEMY.CHASE: // chase the player
         if target != noone {
             var _dir = point_direction(x, y, target.x, target.y);
             hsp = lengthdir_x(move_speed, _dir);
