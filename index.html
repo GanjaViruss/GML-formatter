@@ -628,24 +628,22 @@ document.addEventListener('DOMContentLoaded', () => {
 if hp <= 0 and not is_dead {
     is_dead = true;
     speed = 0;
-    if drop_loot {
+    if drop_loot = true {
         var _item = item_spawn(x, y, loot_table);
-        if _item != undefined {
-            _item.value = irandom_range(1, max_drop);
-        }
+if _item != undefined {
+_item.value = irandom_range(1, max_drop);
+}
     }
     switch death_type {
-        case DEATH.EXPLODE: // big boom
+case DEATH.EXPLODE: // big boom
             instance_create_depth(x, y, depth, obj_explosion);
-            instance_create_depth(x, y, depth, obj_debris);
-        break;
+instance_create_depth(x, y, depth, obj_debris); break;
         case DEATH.FADE:
             alarm[0] = 30;
         break;
         default:
             instance_destroy();
-        break;
-    }
+        break; }
 }`;
   run();
 });
