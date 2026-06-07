@@ -41,7 +41,7 @@ Paste your messy GML code → get clean, readable code back.
 
 ## Usage
 
-Just open `gml-formatter.html` in any browser. No install, no server.
+Just open `index.html` in any browser. No install, no server.
 
 1. Paste GML code on the left
 2. Click **FORMAT** (or `Ctrl+Enter`)
