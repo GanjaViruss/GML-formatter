@@ -6,6 +6,10 @@
 
 ---
 
+🔗 **[Live demo](https://ganjaviruss.github.io/GML-formatter/)**
+
+---
+
 ## What it does
 
 Paste your messy GML code → get clean, readable code back.
