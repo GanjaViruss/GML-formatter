@@ -32,6 +32,19 @@
     background:transparent; color:var(--muted); transition:all .15s; letter-spacing:.5px;
   }
   .lang-toggle button.active { background:var(--accent); color:#0a0a0a; }
+  .style-toggle { position:absolute; top:18px; left:0; display:flex; border:1px solid var(--border2); border-radius:8px; overflow:hidden; }
+  .style-toggle button { padding:6px 12px; font-size:12px; font-weight:700; border:none; cursor:pointer; background:transparent; color:var(--muted); transition:all .15s; letter-spacing:.3px; }
+  .style-toggle button.active { background:var(--accent); color:#0a0a0a; }
+  .style-toggle button:hover:not(.active) { color:var(--txt); background:var(--panel2); }
+  body.dragover textarea#input { border-color:var(--accent); background:#1d2a22; }
+  @media(max-width:680px){
+    .header { padding-top:10px; }
+    .lang-toggle, .style-toggle { position:static; display:inline-flex; margin:10px 5px 0; }
+    .header h1 { font-size:19px; }
+    .controls { gap:8px; padding:10px; }
+    .btn { padding:8px 14px; font-size:12px; }
+    textarea { font-size:12.5px; height:60vh; }
+  }
   .lang-toggle button:hover:not(.active) { color:var(--txt); background:var(--panel2); }
 
   /* CONTROLS */
@@ -100,22 +113,28 @@
 <body>
 
 <div class="header">
-  <h1>GML Formatter <span class="accent">Allman</span></h1>
-  <div class="by">by <a href="https://github.com/GanjaViruss" target="_blank">GanjaViruss</a> &amp; Claude Sonnet 4.6 and Opus 4.8 &nbsp;·&nbsp; open source</div>
+  <h1>GML Formatter <span class="accent" id="style-label">Allman</span></h1>
+  <div class="by">by <a href="https://github.com/GanjaViruss" target="_blank">GanjaViruss</a> &amp; Claude Opus 4.8 &amp; Sonnet 4.6 &nbsp;·&nbsp;&nbsp; open source</div>
   <div class="lang-toggle">
     <button id="btn-pl" onclick="setLang('pl')">PL</button>
     <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
+  </div>
+  <div class="style-toggle">
+    <button id="btn-allman" class="active" onclick="setBraceStyle('allman')">Allman</button>
+    <button id="btn-kr" onclick="setBraceStyle('kr')">K&amp;R</button>
   </div>
 </div>
 
 <div class="controls" id="controls">
   <label><input type="checkbox" id="convOps" checked> <span data-i18n="opt_ops"></span></label>
   <label><input type="checkbox" id="fixCond" checked> <span data-i18n="opt_cond"></span></label>
+  <label><input type="checkbox" id="fixVars" checked> <span data-i18n="opt_vars"></span></label>
   <div class="divider"></div>
   <div class="indent-label"><span data-i18n="opt_indent"></span> <input type="number" id="indentSize" value="4" min="1" max="8"> <span data-i18n="opt_spaces"></span></div>
   <div class="divider"></div>
   <button class="btn btn-primary" onclick="run()" data-i18n="btn_format"></button>
   <button class="btn btn-ghost" onclick="copyOut()" data-i18n="btn_copy"></button>
+  <button class="btn btn-ghost" onclick="downloadOut()" data-i18n="btn_download"></button>
   <button class="btn btn-dim" onclick="clearAll()" data-i18n="btn_clear"></button>
 </div>
 
@@ -151,10 +170,12 @@ const I18N = {
   pl: {
     opt_ops:    'and/or/not/mod → && || ! %',
     opt_cond:   'Owij gołe if/while w ( ) + = → ==',
+    opt_vars:   'Sprzątaj duplikaty var (GM2044)',
     opt_indent: 'Wcięcie',
     opt_spaces: 'spacji',
     btn_format: '🔧 FORMATUJ',
     btn_copy:   '📋 Kopiuj',
+    btn_download: '💾 Pobierz .gml',
     btn_clear:  '🗑️ Wyczyść',
     lbl_input:  'Wejście — wklej kod GML',
     lbl_output: 'Wyjście — czysty kod',
@@ -163,16 +184,23 @@ const I18N = {
     status_lines: 'linii',
     status_err: '❌ Błąd',
     status_copied: '📋 Skopiowano!',
-    footer_desc: 'Formatter kodu GML (GameMaker Language) · styl Allman · zero zależności · działa offline',
+    status_ops_l: 'operatorów',
+    status_cond_l: 'warunków w ( )',
+    status_eq_l: '= → ==',
+    status_vars: 'duplikatów var',
+    status_downloaded: '💾 Pobrano',
+    footer_desc: 'Formatter kodu GML (GameMaker Language) · style Allman i K&R · zero zależności · działa offline',
     placeholder: 'Wklej tu kod GML...',
   },
   en: {
     opt_ops:    'and/or/not/mod → && || ! %',
     opt_cond:   'Wrap bare if/while in ( ) + fix = → ==',
+    opt_vars:   'Clean duplicate var (GM2044)',
     opt_indent: 'Indent',
     opt_spaces: 'spaces',
     btn_format: '🔧 FORMAT',
     btn_copy:   '📋 Copy',
+    btn_download: '💾 Download .gml',
     btn_clear:  '🗑️ Clear',
     lbl_input:  'Input — paste GML code',
     lbl_output: 'Output — clean code',
@@ -181,7 +209,12 @@ const I18N = {
     status_lines: 'lines',
     status_err: '❌ Error',
     status_copied: '📋 Copied!',
-    footer_desc: 'GML (GameMaker Language) formatter · Allman style · zero dependencies · works offline',
+    status_ops_l: 'operators',
+    status_cond_l: 'conditions wrapped',
+    status_eq_l: '= → ==',
+    status_vars: 'var duplicates',
+    status_downloaded: '💾 Downloaded',
+    footer_desc: 'GML (GameMaker Language) formatter · Allman & K&R styles · zero dependencies · works offline',
     placeholder: 'Paste GML code here...',
   }
 };
@@ -206,8 +239,21 @@ function setLang(l) {
 // GML Formatter - tokenizer + pretty printer (Allman style)
 // Zero dependencies. Node + browser.
 // ============================================================
+// ============================================================
+// GML Formatter - tokenizer + pretty printer (Allman style)
+// Zero dependencies. Node + browser.
+// ============================================================
+// ============================================================
+// GML Formatter - tokenizer + pretty printer (Allman style)
+// Zero dependencies. Node + browser.
+// ============================================================
+// ============================================================
+// GML Formatter - tokenizer + pretty printer (Allman style)
+// Zero dependencies. Node + browser.
+// ============================================================
 (function (global) {
   'use strict';
+  const api = { lastStats: {} };
 
   function tokenize(src) {
     const tokens = [];
@@ -296,17 +342,23 @@ function setLang(l) {
   }
 
   const KW_OP = { and: '&&', or: '||', not: '!', mod: '%', xor: '^^' };
-  function normalize(tokens, convertOps) {
+  function normalize(tokens, convertOps, stats) {
     return tokens.map(tok => {
-      if (convertOps && tok.t === 'ID' && KW_OP[tok.v] !== undefined) return { t: 'OP', v: KW_OP[tok.v] };
-      if (tok.t === 'OP' && tok.v === '<>') return { t: 'OP', v: '!=' };
+      if (convertOps && tok.t === 'ID' && KW_OP[tok.v] !== undefined) {
+        if (stats) stats.ops++;
+        return { t: 'OP', v: KW_OP[tok.v] };
+      }
+      if (tok.t === 'OP' && tok.v === '<>') {
+        if (stats) stats.ops++;
+        return { t: 'OP', v: '!=' };
+      }
       return tok;
     });
   }
 
 
   // Owija gołe warunki w nawiasy + zamienia = na == w warunku
-  function fixConditions(tokens) {
+  function fixConditions(tokens, stats) {
     const KW = new Set(['if', 'while', 'switch', 'with', 'repeat', 'until']);
     const res = [];
     const sig = from => {
@@ -330,7 +382,7 @@ function setLang(l) {
             let t2 = tokens[k];
             if (t2.t === 'OP' && (t2.v === '(' || t2.v === '[')) depth++;
             else if (t2.t === 'OP' && (t2.v === ')' || t2.v === ']')) depth--;
-            else if (depth >= 1 && t2.t === 'OP' && t2.v === '=') t2 = { t: 'OP', v: '==' };
+            else if (depth >= 1 && t2.t === 'OP' && t2.v === '=') { t2 = { t: 'OP', v: '==' }; if (stats) stats.eq++; }
             res.push(t2);
             k++;
           } while (k < tokens.length && depth > 0);
@@ -351,10 +403,11 @@ function setLang(l) {
             scan++;
           }
           if (end >= 0) {
+            if (stats) stats.cond++;
             res.push({ t: 'OP', v: '(' });
             for (let m = ni; m < end; m++) {
               let t2 = tokens[m];
-              if (t2.t === 'OP' && t2.v === '=') t2 = { t: 'OP', v: '==' };
+              if (t2.t === 'OP' && t2.v === '=') { t2 = { t: 'OP', v: '==' }; if (stats) stats.eq++; }
               res.push(t2);
             }
             res.push({ t: 'OP', v: ')' });
@@ -369,6 +422,66 @@ function setLang(l) {
     return res;
   }
 
+
+  // Sprzata duplikaty deklaracji var w tym samym function-scope (naprawia GM2044)
+  function fixVars(tokens) {
+    const res = [];
+    const scopes = [new Set()];
+    const braceInfo = [];
+    let pendingFunction = false;
+    let dupFixed = 0;
+    const sig = from => {
+      let k = from;
+      while (k < tokens.length && (tokens[k].t === 'NL' ||
+        tokens[k].t === 'LCOMMENT' || tokens[k].t === 'BCOMMENT')) k++;
+      return k;
+    };
+    let i = 0;
+    while (i < tokens.length) {
+      const tok = tokens[i];
+      if (tok.t === 'ID' && tok.v === 'function') {
+        pendingFunction = true; res.push(tok); i++; continue;
+      }
+      if (tok.t === 'OP' && tok.v === '{') {
+        braceInfo.push({ fnScope: pendingFunction });
+        if (pendingFunction) { scopes.push(new Set()); pendingFunction = false; }
+        res.push(tok); i++; continue;
+      }
+      if (tok.t === 'OP' && tok.v === '}') {
+        const info = braceInfo.pop();
+        if (info && info.fnScope && scopes.length > 1) scopes.pop();
+        res.push(tok); i++; continue;
+      }
+      if (tok.t === 'ID' && tok.v === 'var') {
+        const ni = sig(i + 1);
+        const nameTok = tokens[ni];
+        if (nameTok && nameTok.t === 'ID') {
+          const ai = sig(ni + 1);
+          const after = tokens[ai];
+          const isMulti = after && after.t === 'OP' && after.v === ',';
+          const cur = scopes[scopes.length - 1];
+          if (!isMulti) {
+            if (cur.has(nameTok.v)) { dupFixed++; i = ni; continue; }
+            else cur.add(nameTok.v);
+          } else {
+            let k = ni, expectName = true;
+            while (k < tokens.length) {
+              const t = tokens[k];
+              if (t.t === 'OP' && (t.v === ';' || t.v === '{')) break;
+              if (expectName && t.t === 'ID') { cur.add(t.v); expectName = false; }
+              else if (t.t === 'OP' && t.v === ',') expectName = true;
+              else if (t.t === 'OP' && t.v === '=') expectName = false;
+              k++;
+            }
+          }
+        }
+        res.push(tok); i++; continue;
+      }
+      res.push(tok); i++;
+    }
+    return { tokens: res, dupFixed };
+  }
+
   const KW_SPACE_PAREN = new Set(['if', 'while', 'for', 'switch', 'with',
     'repeat', 'until', 'return', 'case', 'do', 'else', 'default', 'delete',
     'throw', 'new']);
@@ -379,13 +492,51 @@ function setLang(l) {
     '%', '&&', '||', '&', '|', '^', '^^', '+=', '-=', '*=', '/=', '%=',
     '&=', '|=', '^=', '<<', '>>', '??', '>>=', '<<=', '??=']);
 
+
+  // Konwertuje sformatowany kod Allman -> K&R (klamra na koncu linii)
+  function toKR(text) {
+    let lines = text.split('\n');
+    // Krok 1: } + else/until/while/catch w nastepnej linii -> jedna linia
+    for (let i = 0; i < lines.length - 1; i++) {
+      const cur = lines[i], nxt = lines[i + 1];
+      if (/^\s*\}\s*$/.test(cur) && /^\s*(else|until|while|catch)\b/.test(nxt)) {
+        lines[i] = cur.replace(/\s*$/, '') + ' ' + nxt.trim();
+        lines.splice(i + 1, 1);
+        i--;
+      }
+    }
+    // Krok 2: linia + nastepna ktora jest samym { -> dolacz {
+    for (let i = 0; i < lines.length - 1; i++) {
+      const cur = lines[i], nxt = lines[i + 1];
+      if (/^\s*\{\s*$/.test(nxt)) {
+        const t = cur.trim();
+        if (t === '') continue;                  // pusta linia
+        if (t.indexOf('//') !== -1) continue;     // komentarz w linii -> zostaw Allman
+        if (/\/\*/.test(t)) continue;           // blok komentarza
+        if (/[{}]$/.test(t)) continue;            // juz konczy sie klamra
+        lines[i] = cur.replace(/\s*$/, '') + ' {';
+        lines.splice(i + 1, 1);
+        i--;
+      }
+    }
+    return lines.join('\n');
+  }
+
   function format(src, opts) {
     opts = opts || {};
     const indentUnit = ' '.repeat(opts.indentSize || 4);
     const convertOps = opts.convertKeywordOps !== false;
     const doFixCond = opts.fixConditions === true;
-    let tokens = normalize(tokenize(src), convertOps);
-    if (doFixCond) tokens = fixConditions(tokens);
+    const doFixVars = opts.fixVars === true;
+    const stats = { ops: 0, cond: 0, eq: 0, dupVarsFixed: 0 };
+    let tokens = normalize(tokenize(src), convertOps, stats);
+    if (doFixCond) tokens = fixConditions(tokens, stats);
+    if (doFixVars) {
+      const r = fixVars(tokens);
+      tokens = r.tokens;
+      stats.dupVarsFixed = r.dupFixed;
+    }
+    api.lastStats = stats;
 
     const out = [];
     let indent = 0;
@@ -398,6 +549,7 @@ function setLang(l) {
     let blankPending = false;
     let nlRun = 0;
     let lastKw = null;
+    let funcExprPending = false;
 
     const switchExtra = () => {
       let e = 0; for (const b of blockStack) if (b.isSwitch && b.caseBody) e++; return e;
@@ -503,10 +655,12 @@ function setLang(l) {
           prev = { t: 'OP', v: '}' }; lastKw = null; idx = k; continue;
         }
         const isSwitch = !isStruct && lastKw === 'switch';
+        const isFuncExpr = lastKw === 'function' && funcExprPending;
+        funcExprPending = false;
         flush();
         pushLine('{', curIndent());
         indent++;
-        blockStack.push({ type: isStruct ? 'struct' : 'block', isSwitch, caseBody: false });
+        blockStack.push({ type: (isStruct || isFuncExpr) ? 'struct' : 'block', isSwitch, caseBody: false });
         ternaryStack.push(0);
         prev = { t: 'OP', v: '{' }; lastKw = null;
         continue;
@@ -560,6 +714,12 @@ function setLang(l) {
         }
       }
 
+      if (tok.t === 'ID' && v === 'function') {
+        funcExprPending = prev && ((prev.t === 'OP' &&
+          ['=', '(', ',', ':', '[', '??', 'return'].includes(prev.v)) ||
+          (prev.t === 'ID' && prev.v === 'return'));
+      }
+
       append(tok);
 
       if (tok.t === 'ID' && ['if', 'while', 'for', 'switch', 'with',
@@ -567,13 +727,16 @@ function setLang(l) {
     }
     flush();
 
-    return out.join('\n')
+    let result = out.join('\n')
       .replace(/\n{3,}/g, '\n\n')
       .replace(/[ \t]+$/gm, '')
       .replace(/\s+$/, '') + '\n';
+    if (opts.braceStyle === 'kr') result = toKR(result);
+    return result;
   }
 
-  const api = { format, tokenize, normalize, fixConditions };
+  api.format = format; api.tokenize = tokenize; api.normalize = normalize;
+  api.fixConditions = fixConditions; api.fixVars = fixVars; api.toKR = toKR;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   global.GMLFormat = api;
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -590,11 +753,20 @@ function run() {
       indentSize: parseInt(document.getElementById('indentSize').value) || 4,
       convertKeywordOps: document.getElementById('convOps').checked,
       fixConditions: document.getElementById('fixCond').checked,
+      fixVars: document.getElementById('fixVars').checked,
+      braceStyle: braceStyle,
     });
+    savePrefs();
     document.getElementById('output').value = result;
     const lines = result.split('\n').filter(l=>l.trim()).length;
+    const stats = GMLFormat.lastStats || {};
     st.className = 'status ok';
-    st.textContent = I18N[lang].status_ok + ' — ' + lines + ' ' + I18N[lang].status_lines;
+    let msg = I18N[lang].status_ok + ' — ' + lines + ' ' + I18N[lang].status_lines;
+    if (stats.ops > 0) msg += ' · ' + stats.ops + ' ' + I18N[lang].status_ops_l;
+    if (stats.cond > 0) msg += ' · ' + stats.cond + ' ' + I18N[lang].status_cond_l;
+    if (stats.eq > 0) msg += ' · ' + stats.eq + ' ' + I18N[lang].status_eq_l;
+    if (stats.dupVarsFixed > 0) msg += ' · ' + stats.dupVarsFixed + ' ' + I18N[lang].status_vars;
+    st.textContent = msg;
   } catch(e) {
     st.className = 'status err';
     st.textContent = I18N[lang].status_err + ': ' + e.message;
@@ -612,40 +784,145 @@ function copyOut() {
   }).catch(() => { out.select(); document.execCommand('copy'); });
 }
 
+function downloadOut() {
+  const out = document.getElementById('output');
+  if (!out.value) return;
+  const blob = new Blob([out.value], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'formatted.gml';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  const st = document.getElementById('status');
+  st.className = 'status ok';
+  st.textContent = I18N[lang].status_downloaded;
+}
+
 function clearAll() {
   document.getElementById('input').value = '';
   document.getElementById('output').value = '';
   document.getElementById('status').textContent = '';
 }
 
+let braceStyle = 'allman';
+function setBraceStyle(style) {
+  braceStyle = style;
+  document.getElementById('btn-allman').classList.toggle('active', style === 'allman');
+  document.getElementById('btn-kr').classList.toggle('active', style === 'kr');
+  document.getElementById('style-label').textContent = style === 'kr' ? 'K&R' : 'Allman';
+  savePrefs();
+  if (document.getElementById('input').value.trim()) run();
+}
+
+// Zapamietywanie ustawien (dziala na GitHub Pages; w sandboxie po cichu pomijane)
+function savePrefs() {
+  try {
+    localStorage.setItem('gmlfmt', JSON.stringify({
+      lang, braceStyle,
+      convOps: document.getElementById('convOps').checked,
+      fixCond: document.getElementById('fixCond').checked,
+      fixVars: document.getElementById('fixVars').checked,
+      indent: document.getElementById('indentSize').value,
+    }));
+  } catch (e) {}
+}
+function loadPrefs() {
+  try {
+    const p = JSON.parse(localStorage.getItem('gmlfmt') || '{}');
+    if (p.convOps !== undefined) document.getElementById('convOps').checked = p.convOps;
+    if (p.fixCond !== undefined) document.getElementById('fixCond').checked = p.fixCond;
+    if (p.fixVars !== undefined) document.getElementById('fixVars').checked = p.fixVars;
+    if (p.indent) document.getElementById('indentSize').value = p.indent;
+    if (p.braceStyle) setBraceStyle(p.braceStyle);
+    if (p.lang) setLang(p.lang);
+  } catch (e) {}
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   setLang('en');
-  document.getElementById('input').addEventListener('keydown', e => {
+  const inp = document.getElementById('input');
+
+  // Ctrl+Enter = formatuj
+  inp.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); run(); }
   });
-  document.getElementById('input').value =
+
+  // Auto-format po wklejeniu
+  inp.addEventListener('paste', () => { setTimeout(run, 0); });
+
+  // Zapis ustawien po zmianie opcji
+  ['convOps','fixCond','fixVars','indentSize'].forEach(id => {
+    document.getElementById(id).addEventListener('change', () => { savePrefs(); run(); });
+  });
+
+  // Drag & drop pliku .gml / .txt
+  document.addEventListener('dragover', e => { e.preventDefault(); document.body.classList.add('dragover'); });
+  document.addEventListener('dragleave', e => { if (e.relatedTarget === null) document.body.classList.remove('dragover'); });
+  document.addEventListener('drop', e => {
+    e.preventDefault();
+    document.body.classList.remove('dragover');
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => { inp.value = ev.target.result; run(); };
+    reader.readAsText(file);
+  });
+
+  inp.value =
 `// obj_enemy — Step_0.gml
-if hp <= 0 and not is_dead {
-    is_dead = true;
-    speed = 0;
-    if drop_loot = true {
-        var _item = item_spawn(x, y, loot_table);
-if _item != undefined {
-_item.value = irandom_range(1, max_drop);
+if instance_exists(target) == false {
+    target = noone;
 }
+
+// --- szukanie celu ---
+if target == noone and not is_stunned {
+    var _list = ds_list_create();
+    var _n = collision_circle_list(x, y, aggro_range, obj_player, false, true, _list, false);
+    if _n > 0 {
+        var _closest = noone;
+        var _best = aggro_range + 1;
+        for (var _i = 0; _i < _n; _i++) {
+            var _p = _list[| _i];
+            var _d = point_distance(x, y, _p.x, _p.y);
+            if _d < _best {
+                _best = _d;
+                var _closest = _p;
+            }
+        }
+        target = _closest;
     }
-    switch death_type {
-case DEATH.EXPLODE: // big boom
-            instance_create_depth(x, y, depth, obj_explosion);
-instance_create_depth(x, y, depth, obj_debris); break;
-        case DEATH.FADE:
-            alarm[0] = 30;
-        break;
-        default:
-            instance_destroy();
-        break; }
-}`;
+    ds_list_destroy(_list);
+}
+
+// --- zachowanie wg stanu ---
+switch state {
+    case ENEMY.IDLE:
+        if target != noone hsp = 0;
+        vsp = 0;
+    break;
+
+    case ENEMY.CHASE: // gonienie gracza
+        if target != noone {
+            var _dir = point_direction(x, y, target.x, target.y);
+            hsp = lengthdir_x(move_speed, _dir);
+            vsp = lengthdir_y(move_speed, _dir);
+            sprite_index = (hsp != 0 or vsp != 0) ? spr_walk : spr_idle;
+        }
+    break;
+
+    default:
+        hsp = 0;
+        vsp = 0;
+    break;
+}
+
+x += hsp;
+y += vsp;`;
   run();
+  loadPrefs();
 });
 </script>
 </body>
