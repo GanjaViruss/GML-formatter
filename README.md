@@ -1,12 +1,8 @@
-# GML Formatter — Allman Style
+# GML Formatter — Allman & K&R
 
 > Format your GameMaker Language code properly. No more mess.
 
-**by [GanjaViruss](https://github.com/GanjaViruss) & Claude Sonnet 4.6 & Opus 4.8**
-
-## 🔗 Live demo
-**[ganjaviruss.github.io/GML-formatter/](https://ganjaviruss.github.io/GML-formatter/)**
-
+**by [GanjaViruss](https://github.com/GanjaViruss) & Claude Opus 4.8 & Sonnet 4.6**
 
 ---
 
@@ -14,13 +10,19 @@
 
 Paste your messy GML code → get clean, readable code back.
 
-- **Allman brace style** — braces on their own line, always
+- **Brace style** — Allman (braces on their own line) or K&R (braces on same line), your pick
 - **Keyword operators** — `and` → `&&`, `or` → `||`, `not` → `!`, `mod` → `%`, `xor` → `^^`, `<>` → `!=`
 - **Condition fixer** — wraps bare `if x > 0 {` into `if (x > 0) {`, fixes `=` → `==` inside conditions
+- **Variable cleanup** — removes duplicate `var` declarations in the same scope (fixes GM2044 "local variable already declared")
 - **Proper indentation** — configurable (default 4 spaces)
 - **Inline comments preserved** — `x = 1; // comment` stays on one line
 - **Switch/case formatting** — correct indentation for case bodies
 - **Template strings safe** — `$"text {var}"` never broken
+- **Drag & drop** — drop a .gml file onto the page to load it
+- **Auto-format on paste** — paste code and it formats instantly
+- **Remembers settings** — language, brace style and options persist between visits
+- **Live stats** — shows how many operators, conditions and var duplicates were fixed
+- **Mobile friendly** — responsive layout
 - **Idempotent** — format twice, get the same result
 
 ## Features
@@ -30,6 +32,7 @@ Paste your messy GML code → get clean, readable code back.
 | Zero dependencies | No CDN, no npm, one `.html` file |
 | Works offline | Open the file locally, no internet needed |
 | PL / EN | Polish and English UI |
+| Download | Export formatted code as .gml file |
 | Idempotent | Safe to run multiple times |
 
 ## Usage
@@ -87,6 +90,27 @@ if (!work_available && !work_paused && regen_timer > 0)
 ## Known limitation
 
 Bare single-line if without braces (`if x > 5 exit;`) — the formatter won't add parens here because it can't safely detect where the condition ends and the body begins. Add braces or parens manually for these.
+
+## Changelog
+
+**v1.3**
+- Live stats: operators / conditions / var fixes counter
+- Responsive layout for mobile
+- Bigger built-in example
+
+**v1.2**
+- Added brace style choice: Allman / K&R
+- Added drag & drop file loading
+- Auto-format on paste
+- Settings now persist between visits
+
+**v1.1**
+- Added duplicate `var` cleanup (fixes GM2044 errors)
+- Added Download button to export as .gml
+- English default UI
+
+**v1.0**
+- Initial release: Allman formatting, operator conversion, condition fixing
 
 ## License
 
