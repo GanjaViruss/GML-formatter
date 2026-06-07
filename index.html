@@ -101,7 +101,7 @@
 
 <div class="header">
   <h1>GML Formatter <span class="accent">Allman</span></h1>
-  <div class="by">by <a href="https://github.com/GanjaViruss" target="_blank">GanjaViruss</a> &amp; Claude Sonnet 4.6 and Opus 4.8 &nbsp;·&nbsp; open source</div>
+  <div class="by">by <a href="https://github.com/GanjaViruss" target="_blank">GanjaViruss</a> &amp; Claude Sonnet 4.6 &nbsp;·&nbsp; open source</div>
   <div class="lang-toggle">
     <button id="btn-pl" class="active" onclick="setLang('pl')">PL</button>
     <button id="btn-en" onclick="setLang('en')">EN</button>
@@ -619,21 +619,32 @@ function clearAll() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  setLang('pl');
+  setLang('en');
   document.getElementById('input').addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); run(); }
   });
   document.getElementById('input').value =
-`// obj_work_station — Step_0.gml
-if (work_data == undefined) exit;
-
-// REGENERACJA
-if !work_available and not work_paused and regen_timer > 0 {
-    regen_timer--;
-    if regen_timer <= 0 {
-        work_available = true;
-        sprite_index = work_data.sprite_idle;
-        debug_log($"Work regenerated: {work_data.name}", "Step", "obj_work_station");
+`// obj_enemy — Step_0.gml
+if hp <= 0 and not is_dead {
+    is_dead = true;
+    speed = 0;
+    if drop_loot {
+        var _item = item_spawn(x, y, loot_table);
+        if _item != undefined {
+            _item.value = irandom_range(1, max_drop);
+        }
+    }
+    switch death_type {
+        case DEATH.EXPLODE: // big boom
+            instance_create_depth(x, y, depth, obj_explosion);
+            instance_create_depth(x, y, depth, obj_debris);
+        break;
+        case DEATH.FADE:
+            alarm[0] = 30;
+        break;
+        default:
+            instance_destroy();
+        break;
     }
 }`;
   run();
