@@ -4,6 +4,10 @@
 
 **by [GanjaViruss](https://github.com/GanjaViruss) & Claude Sonnet 4.6 & Opus 4.8**
 
+## 🔗 Live demo
+**[ganjaviruss.github.io/GML-formatter/](https://ganjaviruss.github.io/GML-formatter/)**
+
+
 ---
 
 ## What it does
