@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GML Formatter — by GanjaViruss & Claude</title>
+<style>
+  :root {
+    --bg:#141414; --panel:#1e1e1e; --panel2:#252525; --field:#181818;
+    --border:#333; --border2:#444; --txt:#d4d4d4; --muted:#666;
+    --accent:#00ff9d; --accent2:#00c478; --accent3:#00ff9d22;
+    --red:#ff5d5d; --yellow:#ffd166;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--txt); min-height:100vh; padding:16px;}
+
+  /* HEADER */
+  .header { text-align:center; padding:18px 0 14px; position:relative; }
+  .header h1 { font-size:22px; font-weight:800; letter-spacing:.3px; }
+  .header h1 span.accent { color:var(--accent); }
+  .header .by { font-size:12px; color:var(--muted); margin-top:4px; letter-spacing:.5px; }
+  .header .by a { color:var(--accent2); text-decoration:none; }
+  .header .by a:hover { text-decoration:underline; }
+
+  /* LANG TOGGLE */
+  .lang-toggle {
+    position:absolute; top:18px; right:0;
+    display:flex; gap:0; border:1px solid var(--border2); border-radius:8px; overflow:hidden;
+  }
+  .lang-toggle button {
+    padding:6px 14px; font-size:12px; font-weight:700; border:none; cursor:pointer;
+    background:transparent; color:var(--muted); transition:all .15s; letter-spacing:.5px;
+  }
+  .lang-toggle button.active { background:var(--accent); color:#0a0a0a; }
+  .lang-toggle button:hover:not(.active) { color:var(--txt); background:var(--panel2); }
+
+  /* CONTROLS */
+  .controls {
+    display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:center;
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:12px 16px; margin-bottom:14px;
+  }
+  .controls label {
+    font-size:13px; color:var(--txt); display:flex; align-items:center; gap:7px; cursor:pointer;
+    padding:5px 10px; border-radius:6px; border:1px solid var(--border); transition:border-color .15s;
+    user-select:none;
+  }
+  .controls label:hover { border-color:var(--accent2); }
+  .controls label input[type=checkbox] { accent-color:var(--accent); width:14px; height:14px; }
+  .indent-label { display:flex; align-items:center; gap:7px; font-size:13px; padding:5px 10px; border:1px solid var(--border); border-radius:6px; }
+  .indent-label input[type=number] {
+    width:48px; background:var(--field); color:var(--txt); border:1px solid var(--border2);
+    border-radius:5px; padding:3px 6px; font-family:inherit; font-size:13px; text-align:center;
+  }
+  .divider { width:1px; height:28px; background:var(--border2); margin:0 4px; }
+
+  /* BUTTONS */
+  .btn { padding:9px 20px; font-size:13px; font-weight:700; border:none; border-radius:7px; cursor:pointer; transition:all .15s; letter-spacing:.3px; }
+  .btn-primary { background:var(--accent); color:#0a0a0a; }
+  .btn-primary:hover { background:var(--accent2); }
+  .btn-ghost { background:transparent; color:var(--accent); border:1px solid var(--accent); }
+  .btn-ghost:hover { background:var(--accent3); }
+  .btn-dim { background:transparent; color:var(--muted); border:1px solid var(--border); }
+  .btn-dim:hover { color:var(--txt); border-color:var(--border2); }
+
+  /* GRID */
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media(max-width:800px){ .grid{grid-template-columns:1fr;} }
+  .col-label { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.8px; margin-bottom:7px; }
+  textarea {
+    width:100%; height:72vh; min-height:320px;
+    background:var(--field); color:var(--txt);
+    border:1px solid var(--border); border-radius:9px;
+    padding:14px; font-family:'Consolas','SF Mono','Fira Code',monospace; font-size:13.5px; line-height:1.6;
+    resize:vertical; tab-size:4; outline:none; transition:border-color .15s;
+  }
+  textarea:focus { border-color:var(--accent2); }
+  #output { background:#111; cursor:default; }
+
+  /* STATUS */
+  .statusbar { display:flex; justify-content:center; align-items:center; gap:16px; margin-top:11px; min-height:20px; }
+  .status { font-size:12px; font-weight:600; }
+  .status.ok { color:var(--accent); }
+  .status.err { color:var(--red); }
+  .hint { font-size:11px; color:var(--muted); text-align:center; margin-top:7px; }
+
+  /* FOOTER */
+  .footer { text-align:center; margin-top:18px; font-size:11px; color:var(--muted); line-height:1.7; }
+  .footer a { color:var(--accent2); text-decoration:none; }
+  .footer a:hover { text-decoration:underline; }
+  .gh-btn {
+    display:inline-flex; align-items:center; gap:7px;
+    margin-top:8px; padding:7px 16px; border:1px solid var(--border2); border-radius:7px;
+    color:var(--txt); font-size:12px; font-weight:600; text-decoration:none; transition:all .15s;
+  }
+  .gh-btn:hover { border-color:var(--accent); color:var(--accent); text-decoration:none; }
+  .gh-btn svg { width:15px; height:15px; fill:currentColor; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>GML Formatter <span class="accent">Allman</span></h1>
+  <div class="by">by <a href="https://github.com/GanjaViruss" target="_blank">GanjaViruss</a> &amp; Claude Sonnet 4.6 and Opus 4.8 &nbsp;·&nbsp; open source</div>
+  <div class="lang-toggle">
+    <button id="btn-pl" class="active" onclick="setLang('pl')">PL</button>
+    <button id="btn-en" onclick="setLang('en')">EN</button>
+  </div>
+</div>
+
+<div class="controls" id="controls">
+  <label><input type="checkbox" id="convOps" checked> <span data-i18n="opt_ops"></span></label>
+  <label><input type="checkbox" id="fixCond" checked> <span data-i18n="opt_cond"></span></label>
+  <div class="divider"></div>
+  <div class="indent-label"><span data-i18n="opt_indent"></span> <input type="number" id="indentSize" value="4" min="1" max="8"> <span data-i18n="opt_spaces"></span></div>
+  <div class="divider"></div>
+  <button class="btn btn-primary" onclick="run()" data-i18n="btn_format"></button>
+  <button class="btn btn-ghost" onclick="copyOut()" data-i18n="btn_copy"></button>
+  <button class="btn btn-dim" onclick="clearAll()" data-i18n="btn_clear"></button>
+</div>
+
+<div class="grid">
+  <div>
+    <div class="col-label" data-i18n="lbl_input"></div>
+    <textarea id="input" spellcheck="false"></textarea>
+  </div>
+  <div>
+    <div class="col-label" data-i18n="lbl_output"></div>
+    <textarea id="output" spellcheck="false" readonly></textarea>
+  </div>
+</div>
+
+<div class="statusbar">
+  <div id="status" class="status"></div>
+</div>
+<div class="hint" data-i18n="hint"></div>
+
+<div class="footer">
+  <div data-i18n="footer_desc"></div>
+  <a class="gh-btn" href="https://github.com/GanjaViruss/gml-formatter" target="_blank">
+    <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+    GitHub
+  </a>
+</div>
+
+<script>
+// ============================================================
+// i18n
+// ============================================================
+const I18N = {
+  pl: {
+    opt_ops:    'and/or/not/mod → && || ! %',
+    opt_cond:   'Owij gołe if/while w ( ) + = → ==',
+    opt_indent: 'Wcięcie',
+    opt_spaces: 'spacji',
+    btn_format: '🔧 FORMATUJ',
+    btn_copy:   '📋 Kopiuj',
+    btn_clear:  '🗑️ Wyczyść',
+    lbl_input:  'Wejście — wklej kod GML',
+    lbl_output: 'Wyjście — czysty kod',
+    hint:       'Tip: wklejasz wynik z powrotem i formatujesz ponownie — wynik się nie zmieni (idempotentne). Skrót: Ctrl+Enter',
+    status_ok:  '✅ Gotowe',
+    status_lines: 'linii',
+    status_err: '❌ Błąd',
+    status_copied: '📋 Skopiowano!',
+    footer_desc: 'Formatter kodu GML (GameMaker Language) · styl Allman · zero zależności · działa offline',
+    placeholder: 'Wklej tu kod GML...',
+  },
+  en: {
+    opt_ops:    'and/or/not/mod → && || ! %',
+    opt_cond:   'Wrap bare if/while in ( ) + fix = → ==',
+    opt_indent: 'Indent',
+    opt_spaces: 'spaces',
+    btn_format: '🔧 FORMAT',
+    btn_copy:   '📋 Copy',
+    btn_clear:  '🗑️ Clear',
+    lbl_input:  'Input — paste GML code',
+    lbl_output: 'Output — clean code',
+    hint:       'Tip: paste the result back and format again — output won\'t change (idempotent). Shortcut: Ctrl+Enter',
+    status_ok:  '✅ Done',
+    status_lines: 'lines',
+    status_err: '❌ Error',
+    status_copied: '📋 Copied!',
+    footer_desc: 'GML (GameMaker Language) formatter · Allman style · zero dependencies · works offline',
+    placeholder: 'Paste GML code here...',
+  }
+};
+
+let lang = 'pl';
+function setLang(l) {
+  lang = l;
+  document.documentElement.lang = l;
+  document.getElementById('btn-pl').classList.toggle('active', l==='pl');
+  document.getElementById('btn-en').classList.toggle('active', l==='en');
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (I18N[l][key] !== undefined) el.textContent = I18N[l][key];
+  });
+  document.getElementById('input').placeholder = I18N[l].placeholder;
+}
+
+// ============================================================
+</script>
+<script>
+// ============================================================
+// GML Formatter - tokenizer + pretty printer (Allman style)
+// Zero dependencies. Node + browser.
+// ============================================================
+(function (global) {
+  'use strict';
+
+  function tokenize(src) {
+    const tokens = [];
+    let i = 0;
+    const n = src.length;
+    const isIdStart = c => /[A-Za-z_]/.test(c);
+    const isId = c => /[A-Za-z0-9_]/.test(c);
+
+    while (i < n) {
+      const c = src[i];
+      if (c === '\n') { tokens.push({ t: 'NL' }); i++; continue; }
+      if (c === ' ' || c === '\t' || c === '\r') { i++; continue; }
+
+      if (c === '/' && src[i + 1] === '/') {
+        let j = i + 2;
+        while (j < n && src[j] !== '\n') j++;
+        tokens.push({ t: 'LCOMMENT', v: src.slice(i, j).replace(/\s+$/, '') });
+        i = j; continue;
+      }
+      if (c === '/' && src[i + 1] === '*') {
+        let j = i + 2;
+        while (j < n && !(src[j] === '*' && src[j + 1] === '/')) j++;
+        j = Math.min(n, j + 2);
+        tokens.push({ t: 'BCOMMENT', v: src.slice(i, j) });
+        i = j; continue;
+      }
+      if (c === '#') {
+        const rest = src.slice(i + 1);
+        if (/^(macro|region|endregion)\b/.test(rest)) {
+          let j = i;
+          while (j < n) {
+            if (src[j] === '\n') {
+              let k = j - 1;
+              while (k > i && /[ \t\r]/.test(src[k])) k--;
+              if (src[k] === '\\') { j++; continue; }
+              break;
+            }
+            j++;
+          }
+          tokens.push({ t: 'RAW', v: src.slice(i, j).replace(/[ \t]+$/, '') });
+          i = j; continue;
+        }
+      }
+      if (c === '$' && src[i + 1] === '"') {
+        let j = i + 2;
+        while (j < n && src[j] !== '"') { if (src[j] === '\\') j++; j++; }
+        j = Math.min(n, j + 1);
+        tokens.push({ t: 'STR', v: src.slice(i, j) }); i = j; continue;
+      }
+      if (c === '@' && (src[i + 1] === '"' || src[i + 1] === "'")) {
+        const q = src[i + 1]; let j = i + 2;
+        while (j < n && src[j] !== q) j++;
+        j = Math.min(n, j + 1);
+        tokens.push({ t: 'STR', v: src.slice(i, j) }); i = j; continue;
+      }
+      if (c === '"' || c === "'") {
+        const q = c; let j = i + 1;
+        while (j < n && src[j] !== q) { if (src[j] === '\\') j++; j++; }
+        j = Math.min(n, j + 1);
+        tokens.push({ t: 'STR', v: src.slice(i, j) }); i = j; continue;
+      }
+      if (c === '$') {
+        let j = i + 1; while (j < n && /[0-9A-Fa-f]/.test(src[j])) j++;
+        tokens.push({ t: 'NUM', v: src.slice(i, j) }); i = j; continue;
+      }
+      if (/[0-9]/.test(c) || (c === '.' && /[0-9]/.test(src[i + 1]))) {
+        let j = i;
+        if (c === '0' && (src[i + 1] === 'x' || src[i + 1] === 'X')) {
+          j = i + 2; while (j < n && /[0-9A-Fa-f]/.test(src[j])) j++;
+        } else { while (j < n && /[0-9.]/.test(src[j])) j++; }
+        tokens.push({ t: 'NUM', v: src.slice(i, j) }); i = j; continue;
+      }
+      if (isIdStart(c)) {
+        let j = i + 1; while (j < n && isId(src[j])) j++;
+        tokens.push({ t: 'ID', v: src.slice(i, j) }); i = j; continue;
+      }
+      const three = src.substr(i, 3), two = src.substr(i, 2);
+      const threeOps = ['>>=', '<<=', '??='];
+      const twoOps = ['==', '!=', '<=', '>=', '&&', '||', '++', '--', '+=',
+        '-=', '*=', '/=', '%=', '&=', '|=', '^=', '<<', '>>', '??', '<>'];
+      if (threeOps.includes(three)) { tokens.push({ t: 'OP', v: three }); i += 3; continue; }
+      if (twoOps.includes(two)) { tokens.push({ t: 'OP', v: two }); i += 2; continue; }
+      tokens.push({ t: 'OP', v: c }); i++;
+    }
+    return tokens;
+  }
+
+  const KW_OP = { and: '&&', or: '||', not: '!', mod: '%', xor: '^^' };
+  function normalize(tokens, convertOps) {
+    return tokens.map(tok => {
+      if (convertOps && tok.t === 'ID' && KW_OP[tok.v] !== undefined) return { t: 'OP', v: KW_OP[tok.v] };
+      if (tok.t === 'OP' && tok.v === '<>') return { t: 'OP', v: '!=' };
+      return tok;
+    });
+  }
+
+
+  // Owija gołe warunki w nawiasy + zamienia = na == w warunku
+  function fixConditions(tokens) {
+    const KW = new Set(['if', 'while', 'switch', 'with', 'repeat', 'until']);
+    const res = [];
+    const sig = from => {
+      let k = from;
+      while (k < tokens.length && (tokens[k].t === 'NL' ||
+        tokens[k].t === 'LCOMMENT' || tokens[k].t === 'BCOMMENT')) k++;
+      return k;
+    };
+    let i = 0;
+    while (i < tokens.length) {
+      const tok = tokens[i];
+      res.push(tok);
+      if (tok.t === 'ID' && KW.has(tok.v)) {
+        const ni = sig(i + 1);
+        const nt = tokens[ni];
+        if (nt && nt.t === 'OP' && nt.v === '(') {
+          // istniejące nawiasy -> tylko = na == w srodku
+          for (let m = i + 1; m < ni; m++) res.push(tokens[m]);
+          let depth = 0, k = ni;
+          do {
+            let t2 = tokens[k];
+            if (t2.t === 'OP' && (t2.v === '(' || t2.v === '[')) depth++;
+            else if (t2.t === 'OP' && (t2.v === ')' || t2.v === ']')) depth--;
+            else if (depth >= 1 && t2.t === 'OP' && t2.v === '=') t2 = { t: 'OP', v: '==' };
+            res.push(t2);
+            k++;
+          } while (k < tokens.length && depth > 0);
+          i = k;
+          continue;
+        } else if (nt) {
+          // brak nawiasow -> szukaj terminatora na poziomie 0
+          let pdepth = 0, scan = ni, end = -1;
+          const allowSemi = (tok.v === 'until');
+          while (scan < tokens.length) {
+            const s = tokens[scan];
+            if (s.t === 'OP') {
+              if (s.v === '(' || s.v === '[') pdepth++;
+              else if (s.v === ')' || s.v === ']') pdepth--;
+              else if (s.v === '{' && pdepth === 0) { end = scan; break; }
+              else if (s.v === ';' && pdepth === 0) { if (allowSemi) end = scan; break; }
+            }
+            scan++;
+          }
+          if (end >= 0) {
+            res.push({ t: 'OP', v: '(' });
+            for (let m = ni; m < end; m++) {
+              let t2 = tokens[m];
+              if (t2.t === 'OP' && t2.v === '=') t2 = { t: 'OP', v: '==' };
+              res.push(t2);
+            }
+            res.push({ t: 'OP', v: ')' });
+            i = end;
+            continue;
+          }
+          // brak terminatora -> nie ruszamy (bezpiecznie)
+        }
+      }
+      i++;
+    }
+    return res;
+  }
+
+  const KW_SPACE_PAREN = new Set(['if', 'while', 'for', 'switch', 'with',
+    'repeat', 'until', 'return', 'case', 'do', 'else', 'default', 'delete',
+    'throw', 'new']);
+  const UNARY_PREV_OK = new Set(['(', '[', ',', '{', ':', '?', '=', ';',
+    '==', '!=', '<=', '>=', '<', '>', '+', '-', '*', '/', '%', '&&', '||',
+    '!', '&', '|', '^', '~', '+=', '-=', '*=', '/=', '%=', '<<', '>>', '??']);
+  const BINARY = new Set(['=', '==', '!=', '<=', '>=', '<', '>', '*', '/',
+    '%', '&&', '||', '&', '|', '^', '^^', '+=', '-=', '*=', '/=', '%=',
+    '&=', '|=', '^=', '<<', '>>', '??', '>>=', '<<=', '??=']);
+
+  function format(src, opts) {
+    opts = opts || {};
+    const indentUnit = ' '.repeat(opts.indentSize || 4);
+    const convertOps = opts.convertKeywordOps !== false;
+    const doFixCond = opts.fixConditions === true;
+    let tokens = normalize(tokenize(src), convertOps);
+    if (doFixCond) tokens = fixConditions(tokens);
+
+    const out = [];
+    let indent = 0;
+    let cur = '';
+    let lineToks = [];
+    let prev = null;
+    let parenDepth = 0, bracketDepth = 0;
+    const blockStack = [];
+    const ternaryStack = [0];
+    let blankPending = false;
+    let nlRun = 0;
+    let lastKw = null;
+
+    const switchExtra = () => {
+      let e = 0; for (const b of blockStack) if (b.isSwitch && b.caseBody) e++; return e;
+    };
+    const curIndent = () => indent + switchExtra();
+    const topT = () => ternaryStack[ternaryStack.length - 1];
+    const setT = v => ternaryStack[ternaryStack.length - 1] = v;
+
+    function pushLine(text, lvl) { out.push((lvl > 0 ? indentUnit.repeat(lvl) : '') + text); }
+    function flush() {
+      if (cur.trim() !== '') {
+        if (blankPending && out.length && out[out.length - 1].trim() !== '') out.push('');
+        blankPending = false;
+        pushLine(cur.trimEnd(), curIndent());
+      }
+      cur = ''; lineToks = [];
+    }
+
+    function space(tok) {
+      if (cur === '') return false;
+      const p = prev, v = tok.v;
+      if (tok.t === 'LCOMMENT' || tok.t === 'BCOMMENT') return true;
+      if (v === '.') return false;
+      if (p && p.v === '.') return false;
+      if (p && (p.v === '(' || p.v === '[')) return false;
+      if (v === ')' || v === ']') return false;
+      if (v === ',' || v === ';') return false;
+      if (p && (p.v === ',' || p.v === ';')) return true;
+      if (v === '(') {
+        if (p && p.t === 'ID') return KW_SPACE_PAREN.has(p.v);
+        if (p && p.t === 'OP' && (BINARY.has(p.v) || [',', '?'].includes(p.v))) return true;
+        return false;
+      }
+      if (v === '[') {
+        if (p && p.t === 'OP' && (BINARY.has(p.v) || [',', ':', '?'].includes(p.v))) return true;
+        return false;
+      }
+      if (p && p.v === '[' && ['#', '?', '|', '@', '$'].includes(v)) return false;
+      if (v === ':') return tok._tern === true ? true : (topT() > 0);
+      if (p && p.v === ':') return true;
+      if (v === '?') return true;
+      if (p && p.v === '?') return true;
+      if (v === '++' || v === '--') {
+        if (p && (p.t === 'ID' || p.t === 'NUM' || p.v === ')' || p.v === ']')) return false;
+        return true;
+      }
+      if (p && (p.v === '++' || p.v === '--')) return !(tok.t === 'ID' || tok.t === 'NUM');
+      if (v === '!' || v === '~') return true;
+      if (p && (p.v === '!' || p.v === '~')) return false;
+      if (v === '+' || v === '-') return true;
+      if (p && (p.v === '+' || p.v === '-')) {
+        const pp = lineToks[lineToks.length - 2];
+        const isUnary = pp === undefined || UNARY_PREV_OK.has(pp) || KW_SPACE_PAREN.has(pp);
+        return !isUnary;
+      }
+      if (BINARY.has(v)) return true;
+      if (p && BINARY.has(p.v)) return true;
+      return true;
+    }
+    function append(tok) {
+      cur += (space(tok) ? ' ' : '') + tok.v;
+      lineToks.push(tok.v); prev = tok;
+    }
+
+    function braceIsStruct() {
+      const p = prev; if (!p) return false;
+      if (p.t === 'OP' && ['=', '(', ',', '[', ':', '?', '==', '!=', '+',
+        '-', '*', '/', '&&', '||', '??', 'return'].includes(p.v)) return true;
+      if (p.t === 'ID' && p.v === 'return') return true;
+      return false;
+    }
+
+    for (let idx = 0; idx < tokens.length; idx++) {
+      const tok = tokens[idx];
+
+      if (tok.t === 'NL') {
+        nlRun++;
+        if (nlRun >= 2 && cur.trim() === '') blankPending = true;
+        continue;
+      }
+
+      if (tok.t === 'LCOMMENT' || tok.t === 'BCOMMENT' || tok.t === 'RAW') {
+        if (cur.trim() === '') {
+          if (blankPending && out.length && out[out.length - 1].trim() !== '') out.push('');
+          blankPending = false;
+          if (tok.t === 'BCOMMENT') {
+            tok.v.split('\n').forEach((ln, k) => pushLine(k === 0 ? ln : ln.replace(/^\s+/, ''), curIndent()));
+          } else pushLine(tok.v, curIndent());
+        } else { cur = cur.trimEnd() + '  ' + tok.v; flush(); }
+        nlRun = 0; prev = { t: tok.t, v: '' };
+        continue;
+      }
+
+      nlRun = 0;
+      const v = tok.v;
+
+      if (v === '{' && parenDepth === 0 && bracketDepth === 0) {
+        const isStruct = braceIsStruct();
+        let k = idx + 1; while (k < tokens.length && tokens[k].t === 'NL') k++;
+        if (tokens[k] && tokens[k].v === '}') {
+          if (cur.trim() === '') pushLine('{}', curIndent());
+          else { cur = cur.trimEnd() + ' {}'; flush(); }
+          prev = { t: 'OP', v: '}' }; lastKw = null; idx = k; continue;
+        }
+        const isSwitch = !isStruct && lastKw === 'switch';
+        flush();
+        pushLine('{', curIndent());
+        indent++;
+        blockStack.push({ type: isStruct ? 'struct' : 'block', isSwitch, caseBody: false });
+        ternaryStack.push(0);
+        prev = { t: 'OP', v: '{' }; lastKw = null;
+        continue;
+      }
+
+      if (v === '}' && parenDepth === 0 && bracketDepth === 0) {
+        flush();
+        const blk = blockStack.pop() || { type: 'block' };
+        if (ternaryStack.length > 1) ternaryStack.pop();
+        indent = Math.max(0, indent - 1);
+        if (blk.type === 'struct') {
+          cur = '}'; lineToks = ['}']; prev = { t: 'OP', v: '}' };
+        } else {
+          pushLine('}', indent + switchExtra());
+          prev = { t: 'OP', v: '}' };
+        }
+        lastKw = null;
+        continue;
+      }
+
+      if (v === ';' && parenDepth === 0) {
+        cur = cur.trimEnd() + ';';
+        if (idx + 1 < tokens.length && tokens[idx + 1].t === 'LCOMMENT') {
+          idx++;
+          cur += '  ' + tokens[idx].v;
+        }
+        lineToks.push(';'); prev = { t: 'OP', v: ';' }; flush();
+        continue;
+      }
+
+      if (tok.t === 'ID' && (v === 'case' || v === 'default')) {
+        const blk = blockStack[blockStack.length - 1];
+        if (blk && blk.isSwitch) { flush(); blk.caseBody = false; }
+      }
+
+      if (v === '(') parenDepth++;
+      if (v === ')') parenDepth = Math.max(0, parenDepth - 1);
+      if (v === '[') bracketDepth++;
+      if (v === ']') bracketDepth = Math.max(0, bracketDepth - 1);
+
+      if (v === '?') setT(topT() + 1);
+      if (v === ':') {
+        const blk = blockStack[blockStack.length - 1];
+        if (topT() > 0) { setT(topT() - 1); tok._tern = true; }
+        else if (blk && blk.isSwitch && !blk.caseBody) {
+          append(tok);
+          if (idx + 1 < tokens.length && tokens[idx + 1].t === 'LCOMMENT') {
+            idx++; cur += '  ' + tokens[idx].v;
+          }
+          flush(); blk.caseBody = true; lastKw = null; continue;
+        }
+      }
+
+      append(tok);
+
+      if (tok.t === 'ID' && ['if', 'while', 'for', 'switch', 'with',
+        'repeat', 'do', 'function', 'else'].includes(v)) lastKw = v;
+    }
+    flush();
+
+    return out.join('\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/[ \t]+$/gm, '')
+      .replace(/\s+$/, '') + '\n';
+  }
+
+  const api = { format, tokenize, normalize, fixConditions };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  global.GMLFormat = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+// ============================================================
+// UI logic
+// ============================================================
+function run() {
+  const st = document.getElementById('status');
+  try {
+    const src = document.getElementById('input').value;
+    if (!src.trim()) { st.className='status'; st.textContent=''; return; }
+    const result = GMLFormat.format(src, {
+      indentSize: parseInt(document.getElementById('indentSize').value) || 4,
+      convertKeywordOps: document.getElementById('convOps').checked,
+      fixConditions: document.getElementById('fixCond').checked,
+    });
+    document.getElementById('output').value = result;
+    const lines = result.split('\n').filter(l=>l.trim()).length;
+    st.className = 'status ok';
+    st.textContent = I18N[lang].status_ok + ' — ' + lines + ' ' + I18N[lang].status_lines;
+  } catch(e) {
+    st.className = 'status err';
+    st.textContent = I18N[lang].status_err + ': ' + e.message;
+    console.error(e);
+  }
+}
+
+function copyOut() {
+  const out = document.getElementById('output');
+  if (!out.value) return;
+  const st = document.getElementById('status');
+  navigator.clipboard.writeText(out.value).then(() => {
+    st.className = 'status ok';
+    st.textContent = I18N[lang].status_copied;
+  }).catch(() => { out.select(); document.execCommand('copy'); });
+}
+
+function clearAll() {
+  document.getElementById('input').value = '';
+  document.getElementById('output').value = '';
+  document.getElementById('status').textContent = '';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  setLang('pl');
+  document.getElementById('input').addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); run(); }
+  });
+  document.getElementById('input').value =
+`// obj_work_station — Step_0.gml
+if (work_data == undefined) exit;
+
+// REGENERACJA
+if !work_available and not work_paused and regen_timer > 0 {
+    regen_timer--;
+    if regen_timer <= 0 {
+        work_available = true;
+        sprite_index = work_data.sprite_idle;
+        debug_log($"Work regenerated: {work_data.name}", "Step", "obj_work_station");
+    }
+}`;
+  run();
+});
+</script>
+</body>
+</html>
