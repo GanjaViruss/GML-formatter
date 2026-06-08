@@ -6,8 +6,9 @@
 
 ---
 
-🔗 **[Live demo](https://ganjaviruss.github.io/GML-formatter/)**
-🔗 **[Live demo GML Auto Formatter](https://ganjaviruss.github.io/GML-formatter/batch.html)**
+🔗 **[Manual Formatter Live](https://ganjaviruss.github.io/GML-formatter/)**
+
+🔗 **[GML Auto Formatter Live](https://ganjaviruss.github.io/GML-formatter/batch.html)**
 ---
 
 ## What it does
@@ -43,6 +44,7 @@ Paste your messy GML code → get clean, readable code back.
 
 ## Usage
 
+**Manual Formatter**
 Just open `index.html` in any browser. No install, no server.
 
 1. Paste GML code on the left
@@ -50,6 +52,19 @@ Just open `index.html` in any browser. No install, no server.
 3. Copy the clean code from the right
 
 You can also drag & drop a `.gml` file onto the page, or paste code and it formats automatically.
+
+**GML Auto Formatter**
+
+**WARRING! WARRING!**
+⚠️ This overwrites your .gml files in place. Make a backup or commit to git first. Scan the folder, review the count, then format. Closing GameMaker before running is recommended.
+
+Open `batch.html` in Opera/Chrome/Edge browser. No install, no server.
+Choose MAIN project folder (where is project_name.yyp file)
+Click `Scan` and next `Format & Save (in place)`
+Wait a while :P
+DONE!
+
+
 
 ## Before / After
 
