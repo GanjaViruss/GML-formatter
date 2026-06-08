@@ -18,14 +18,15 @@ Paste your messy GML code → get clean, readable code back.
 - **Keyword operators** — `and` → `&&`, `or` → `||`, `not` → `!`, `mod` → `%`, `xor` → `^^`, `<>` → `!=`
 - **Condition fixer** — wraps bare `if x > 0 {` into `if (x > 0) {`, fixes `=` → `==` inside conditions
 - **Variable cleanup** — removes duplicate `var` declarations in the same scope (fixes GM2044 "local variable already declared")
+- **Comment stripping** — optionally remove `//` comments (keeps `///` JSDoc) and `/* */` block comments
 - **Proper indentation** — configurable (default 4 spaces)
 - **Inline comments preserved** — `x = 1; // comment` stays on one line
 - **Switch/case formatting** — correct indentation for case bodies
 - **Template strings safe** — `$"text {var}"` never broken
-- **Drag & drop** — drop a .gml file onto the page to load it
+- **Drag & drop** — drop a `.gml` file onto the page to load it
 - **Auto-format on paste** — paste code and it formats instantly
 - **Remembers settings** — language, brace style and options persist between visits
-- **Live stats** — shows how many operators, conditions and var duplicates were fixed
+- **Live stats** — shows how many operators, conditions, var duplicates and comments were fixed
 - **Mobile friendly** — responsive layout
 - **Idempotent** — format twice, get the same result
 
@@ -36,7 +37,7 @@ Paste your messy GML code → get clean, readable code back.
 | Zero dependencies | No CDN, no npm, one `.html` file |
 | Works offline | Open the file locally, no internet needed |
 | PL / EN | Polish and English UI |
-| Download | Export formatted code as .gml file |
+| Download | Export formatted code as `.gml` file |
 | Idempotent | Safe to run multiple times |
 
 ## Usage
@@ -46,6 +47,8 @@ Just open `index.html` in any browser. No install, no server.
 1. Paste GML code on the left
 2. Click **FORMAT** (or `Ctrl+Enter`)
 3. Copy the clean code from the right
+
+You can also drag & drop a `.gml` file onto the page, or paste code and it formats automatically.
 
 ## Before / After
 
@@ -82,7 +85,7 @@ if (!work_available && !work_paused && regen_timer > 0)
 - `for` loops
 - `switch / case / default`
 - `with`
-- `function` declarations
+- `function` declarations and expressions
 - Template strings `$"..."` and verbatim strings `@"..."`
 - Hex literals `$FF`
 - GML accessors `[? ]` `[# ]` `[| ]` `[@ ]`
@@ -95,22 +98,29 @@ if (!work_available && !work_paused && regen_timer > 0)
 
 Bare single-line if without braces (`if x > 5 exit;`) — the formatter won't add parens here because it can't safely detect where the condition ends and the body begins. Add braces or parens manually for these.
 
+## Built with AI
+
+This tool was built with Claude (Opus 4.8 & Sonnet 4.6). I use GML myself, there was no solid formatter for it, people kept asking for one, so I built it and released it as free open source. The engine is a custom tokenizer and pretty-printer written specifically for GML — not a generic JS beautifier hacked with regexes.
+
 ## Changelog
 
+**v1.4**
+- Optional comment stripping: `//` (keeps `///` JSDoc docs) and `/* */` block comments
+
 **v1.3**
-- Live stats: operators / conditions / var fixes counter
+- Live stats: operators / conditions / var fixes / comments removed counter
 - Responsive layout for mobile
 - Bigger built-in example
 
 **v1.2**
-- Added brace style choice: Allman / K&R
-- Added drag & drop file loading
+- Brace style choice: Allman / K&R
+- Drag & drop file loading
 - Auto-format on paste
-- Settings now persist between visits
+- Settings persist between visits
 
 **v1.1**
-- Added duplicate `var` cleanup (fixes GM2044 errors)
-- Added Download button to export as .gml
+- Duplicate `var` cleanup (fixes GM2044 errors)
+- Download button to export as `.gml`
 - English default UI
 
 **v1.0**
