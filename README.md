@@ -7,7 +7,7 @@
 ---
 
 🔗 **[Live demo](https://ganjaviruss.github.io/GML-formatter/)**
-
+🔗 **[Live demo GML Auto Formatter](https://ganjaviruss.github.io/GML-formatter/batch.html)**
 ---
 
 ## What it does
@@ -23,6 +23,7 @@ Paste your messy GML code → get clean, readable code back.
 - **Inline comments preserved** — `x = 1; // comment` stays on one line
 - **Switch/case formatting** — correct indentation for case bodies
 - **Template strings safe** — `$"text {var}"` never broken
+- **Missing semicolons** — handles GML code without `;` (auto-detects statement boundaries)
 - **Drag & drop** — drop a `.gml` file onto the page to load it
 - **Auto-format on paste** — paste code and it formats instantly
 - **Remembers settings** — language, brace style and options persist between visits
@@ -103,6 +104,11 @@ Bare single-line if without braces (`if x > 5 exit;`) — the formatter won't ad
 This tool was built with Claude (Opus 4.8 & Sonnet 4.6). I use GML myself, there was no solid formatter for it, people kept asking for one, so I built it and released it as free open source. The engine is a custom tokenizer and pretty-printer written specifically for GML — not a generic JS beautifier hacked with regexes.
 
 ## Changelog
+
+**v1.5**
+- Handles GML without semicolons (auto statement-boundary detection) — fixes glued statements/structs
+- Batch formatter: format an entire project folder in one click (`batch.html`)
+- Fixed edge case with `toString` / `constructor` as variable names
 
 **v1.4**
 - Optional comment stripping: `//` (keeps `///` JSDoc docs) and `/* */` block comments
