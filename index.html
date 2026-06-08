@@ -129,6 +129,8 @@
   <label><input type="checkbox" id="convOps" checked> <span data-i18n="opt_ops"></span></label>
   <label><input type="checkbox" id="fixCond" checked> <span data-i18n="opt_cond"></span></label>
   <label><input type="checkbox" id="fixVars" checked> <span data-i18n="opt_vars"></span></label>
+  <label><input type="checkbox" id="stripLine"> <span data-i18n="opt_strip_line"></span></label>
+  <label><input type="checkbox" id="stripBlock"> <span data-i18n="opt_strip_block"></span></label>
   <div class="divider"></div>
   <div class="indent-label"><span data-i18n="opt_indent"></span> <input type="number" id="indentSize" value="4" min="1" max="8"> <span data-i18n="opt_spaces"></span></div>
   <div class="divider"></div>
@@ -171,6 +173,8 @@ const I18N = {
     opt_ops:    'and/or/not/mod → && || ! %',
     opt_cond:   'Owij gołe if/while w ( ) + = → ==',
     opt_vars:   'Sprzątaj duplikaty var (GM2044)',
+    opt_strip_line:  'Usuń // komentarze (zostaw ///)',
+    opt_strip_block: 'Usuń /* */ komentarze',
     opt_indent: 'Wcięcie',
     opt_spaces: 'spacji',
     btn_format: '🔧 FORMATUJ',
@@ -188,6 +192,7 @@ const I18N = {
     status_cond_l: 'warunków w ( )',
     status_eq_l: '= → ==',
     status_vars: 'duplikatów var',
+    status_comments: 'komentarzy usuniętych',
     status_downloaded: '💾 Pobrano',
     footer_desc: 'Formatter kodu GML (GameMaker Language) · style Allman i K&R · zero zależności · działa offline',
     placeholder: 'Wklej tu kod GML...',
@@ -196,6 +201,8 @@ const I18N = {
     opt_ops:    'and/or/not/mod → && || ! %',
     opt_cond:   'Wrap bare if/while in ( ) + fix = → ==',
     opt_vars:   'Clean duplicate var (GM2044)',
+    opt_strip_line:  'Remove // comments (keep ///)',
+    opt_strip_block: 'Remove /* */ comments',
     opt_indent: 'Indent',
     opt_spaces: 'spaces',
     btn_format: '🔧 FORMAT',
@@ -213,6 +220,7 @@ const I18N = {
     status_cond_l: 'conditions wrapped',
     status_eq_l: '= → ==',
     status_vars: 'var duplicates',
+    status_comments: 'comments removed',
     status_downloaded: '💾 Downloaded',
     footer_desc: 'GML (GameMaker Language) formatter · Allman & K&R styles · zero dependencies · works offline',
     placeholder: 'Paste GML code here...',
@@ -235,6 +243,10 @@ function setLang(l) {
 // ============================================================
 </script>
 <script>
+// ============================================================
+// GML Formatter - tokenizer + pretty printer (Allman style)
+// Zero dependencies. Node + browser.
+// ============================================================
 // ============================================================
 // GML Formatter - tokenizer + pretty printer (Allman style)
 // Zero dependencies. Node + browser.
@@ -536,6 +548,17 @@ function setLang(l) {
       tokens = r.tokens;
       stats.dupVarsFixed = r.dupFixed;
     }
+    // Usuwanie komentarzy (// zachowuje /// JSDoc; /* */ usuwane w calosci)
+    const stripLine = opts.stripLineComments === true;
+    const stripBlock = opts.stripBlockComments === true;
+    if (stripLine || stripBlock) {
+      stats.commentsRemoved = 0;
+      tokens = tokens.filter(t => {
+        if (stripLine && t.t === 'LCOMMENT' && t.v.indexOf('///') !== 0) { stats.commentsRemoved++; return false; }
+        if (stripBlock && t.t === 'BCOMMENT') { stats.commentsRemoved++; return false; }
+        return true;
+      });
+    }
     api.lastStats = stats;
 
     const out = [];
@@ -754,6 +777,8 @@ function run() {
       convertKeywordOps: document.getElementById('convOps').checked,
       fixConditions: document.getElementById('fixCond').checked,
       fixVars: document.getElementById('fixVars').checked,
+      stripLineComments: document.getElementById('stripLine').checked,
+      stripBlockComments: document.getElementById('stripBlock').checked,
       braceStyle: braceStyle,
     });
     savePrefs();
@@ -766,6 +791,7 @@ function run() {
     if (stats.cond > 0) msg += ' · ' + stats.cond + ' ' + I18N[lang].status_cond_l;
     if (stats.eq > 0) msg += ' · ' + stats.eq + ' ' + I18N[lang].status_eq_l;
     if (stats.dupVarsFixed > 0) msg += ' · ' + stats.dupVarsFixed + ' ' + I18N[lang].status_vars;
+    if (stats.commentsRemoved > 0) msg += ' · ' + stats.commentsRemoved + ' ' + I18N[lang].status_comments;
     st.textContent = msg;
   } catch(e) {
     st.className = 'status err';
@@ -835,6 +861,8 @@ function loadPrefs() {
     if (p.convOps !== undefined) document.getElementById('convOps').checked = p.convOps;
     if (p.fixCond !== undefined) document.getElementById('fixCond').checked = p.fixCond;
     if (p.fixVars !== undefined) document.getElementById('fixVars').checked = p.fixVars;
+    if (p.stripLine !== undefined) document.getElementById('stripLine').checked = p.stripLine;
+    if (p.stripBlock !== undefined) document.getElementById('stripBlock').checked = p.stripBlock;
     if (p.indent) document.getElementById('indentSize').value = p.indent;
     if (p.braceStyle) setBraceStyle(p.braceStyle);
     if (p.lang) setLang(p.lang);
@@ -854,7 +882,7 @@ document.addEventListener('DOMContentLoaded', () => {
   inp.addEventListener('paste', () => { setTimeout(run, 0); });
 
   // Zapis ustawien po zmianie opcji
-  ['convOps','fixCond','fixVars','indentSize'].forEach(id => {
+  ['convOps','fixCond','fixVars','stripLine','stripBlock','indentSize'].forEach(id => {
     document.getElementById(id).addEventListener('change', () => { savePrefs(); run(); });
   });
 
