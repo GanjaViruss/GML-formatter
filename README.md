@@ -47,22 +47,22 @@ Paste your messy GML code → get clean, readable code back.
 **Manual Formatter**
 Just open `index.html` in any browser. No install, no server.
 
-1. Paste GML code on the left
+1. Paste GML code on the left.
 2. Click **FORMAT** (or `Ctrl+Enter`)
-3. Copy the clean code from the right
+3. Copy the clean code from the right.
 
 You can also drag & drop a `.gml` file onto the page, or paste code and it formats automatically.
 
 **GML Auto Formatter**
 
-**WARRING! WARRING!**
+**WARRING!!!**
 ⚠️ This overwrites your .gml files in place. Make a backup or commit to git first. Scan the folder, review the count, then format. Closing GameMaker before running is recommended.
 
-Open `batch.html` in Opera/Chrome/Edge browser. No install, no server.
-Choose MAIN project folder (where is project_name.yyp file)
-Click `Scan` and next `Format & Save (in place)`
-Wait a while :P
-DONE!
+1. Open `batch.html` in Opera/Chrome/Edge browser. No install, no server.
+2. Choose MAIN project folder (where is project_name.yyp file)
+3. Click `Scan` and next `Format & Save (in place)`
+4. Wait a while :P
+5. DONE!
 
 
 
