@@ -9,6 +9,9 @@
 🔗 **[Manual Formatter Live](https://ganjaviruss.github.io/GML-formatter/)**
 
 🔗 **[GML Auto Formatter Live](https://ganjaviruss.github.io/GML-formatter/batch.html)**
+
+Part of [GML Tools](https://github.com/GanjaViruss/GML-Tools)
+
 ---
 
 ## What it does
