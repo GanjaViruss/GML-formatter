@@ -446,6 +446,11 @@
     let nlRun = 0;
     let lastKw = null;
     let funcExprPending = false;
+    // track whether the most recent ')' closed a control-flow header like for(...)/while(...)/if(...)
+    // so we don't wrongly insert ';' before the loop/if body when it's bodyless on one line
+    const parenCtrl = [];          // per '(' : true if it opened a control header
+    let ctrlKwPending = false;     // a control keyword was just seen, next '(' is its header
+    let lastCloseWasCtrl = false;  // the last ')' closed a control header
 
     const switchExtra = () => {
       let e = 0; for (const b of blockStack) if (b.isSwitch && b.caseBody) e++; return e;
@@ -635,7 +640,9 @@
           prev.t === 'NUM' || prev.t === 'STR' ||
           (prev.t === 'OP' && (prev.v === ')' || prev.v === ']' || prev.v === '}')) ||
           (prev.t === 'ID' && !CONTINUE_KW.has(prev.v));
-        if (endsStmt) {
+        // but NOT when prev ')' closed a control header — then this keyword is the loop/if body
+        const bodyOfControl = prev.t === 'OP' && prev.v === ')' && lastCloseWasCtrl;
+        if (endsStmt && !bodyOfControl) {
           cur = cur.trimEnd() + ';';
           prev = { t: 'OP', v: ';' };
           flush();
@@ -647,8 +654,8 @@
         if (blk && blk.isSwitch) { flush(); blk.caseBody = false; }
       }
 
-      if (v === '(') parenDepth++;
-      if (v === ')') parenDepth = Math.max(0, parenDepth - 1);
+      if (v === '(') { parenDepth++; parenCtrl.push(ctrlKwPending); ctrlKwPending = false; lastCloseWasCtrl = false; }
+      if (v === ')') { parenDepth = Math.max(0, parenDepth - 1); lastCloseWasCtrl = parenCtrl.length ? parenCtrl.pop() : false; }
       if (v === '[') bracketDepth++;
       if (v === ']') bracketDepth = Math.max(0, bracketDepth - 1);
 
@@ -675,6 +682,8 @@
 
       if (tok.t === 'ID' && ['if', 'while', 'for', 'switch', 'with',
         'repeat', 'do', 'function', 'else'].includes(v)) lastKw = v;
+      // control keywords whose '(' header is followed by a body — next '(' is a header
+      if (tok.t === 'ID' && ['if', 'while', 'for', 'with', 'repeat', 'switch'].includes(v)) ctrlKwPending = true;
     }
     flush();
 
@@ -832,10 +841,19 @@ async function formatAll() {
   document.getElementById('scanBtn').disabled = false;
 }
 
-// detekcja wsparcia
+// detekcja wsparcia + iframe
 window.addEventListener('DOMContentLoaded', () => {
-  if (!window.showDirectoryPicker) {
-    document.getElementById('unsupported').style.display = 'block';
+  const inIframe = (window.self !== window.top);
+  const noAPI = !window.showDirectoryPicker;
+  const u = document.getElementById('unsupported');
+  if (!u) return;
+  if (inIframe) {
+    // File System Access is blocked inside the portal's embedded view — must pop out
+    u.style.display = 'block';
+    u.innerHTML = '⚠️ Folder access is blocked in the embedded view.<br>' +
+      'Use the <b>↗ New tab</b> button at the top of the page to open this tool in its own tab, then it works.';
+  } else if (noAPI) {
+    u.style.display = 'block';
   }
 });
 </script>

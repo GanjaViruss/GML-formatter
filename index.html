@@ -600,6 +600,11 @@ function setLang(l) {
     let nlRun = 0;
     let lastKw = null;
     let funcExprPending = false;
+    // track whether the most recent ')' closed a control-flow header like for(...)/while(...)/if(...)
+    // so we don't wrongly insert ';' before the loop/if body when it's bodyless on one line
+    const parenCtrl = [];
+    let ctrlKwPending = false;
+    let lastCloseWasCtrl = false;
 
     const switchExtra = () => {
       let e = 0; for (const b of blockStack) if (b.isSwitch && b.caseBody) e++; return e;
@@ -789,7 +794,8 @@ function setLang(l) {
           prev.t === 'NUM' || prev.t === 'STR' ||
           (prev.t === 'OP' && (prev.v === ')' || prev.v === ']' || prev.v === '}')) ||
           (prev.t === 'ID' && !CONTINUE_KW.has(prev.v));
-        if (endsStmt) {
+        const bodyOfControl = prev.t === 'OP' && prev.v === ')' && lastCloseWasCtrl;
+        if (endsStmt && !bodyOfControl) {
           cur = cur.trimEnd() + ';';
           prev = { t: 'OP', v: ';' };
           flush();
@@ -801,8 +807,8 @@ function setLang(l) {
         if (blk && blk.isSwitch) { flush(); blk.caseBody = false; }
       }
 
-      if (v === '(') parenDepth++;
-      if (v === ')') parenDepth = Math.max(0, parenDepth - 1);
+      if (v === '(') { parenDepth++; parenCtrl.push(ctrlKwPending); ctrlKwPending = false; lastCloseWasCtrl = false; }
+      if (v === ')') { parenDepth = Math.max(0, parenDepth - 1); lastCloseWasCtrl = parenCtrl.length ? parenCtrl.pop() : false; }
       if (v === '[') bracketDepth++;
       if (v === ']') bracketDepth = Math.max(0, bracketDepth - 1);
 
@@ -829,6 +835,7 @@ function setLang(l) {
 
       if (tok.t === 'ID' && ['if', 'while', 'for', 'switch', 'with',
         'repeat', 'do', 'function', 'else'].includes(v)) lastKw = v;
+      if (tok.t === 'ID' && ['if', 'while', 'for', 'with', 'repeat', 'switch'].includes(v)) ctrlKwPending = true;
     }
     flush();
 
